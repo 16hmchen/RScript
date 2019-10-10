@@ -2,26 +2,6 @@ import { createElement, render, renderDOM } from './element'
 import { diff } from './diff'
 import { patch } from './patch'
 
-// let VDom1 = createElement('ul', { class: 'list' }, [
-//     createElement('li', { class: 'item' }, [
-//         createElement('a', { href: '#' }, ['link']),
-//     ]),
-//     createElement('li', { class: 'item', style: "color:red" }, ['b']),
-//     createElement('li', { class: 'item' }, ['c']),
-// ])
-
-let VDom1 = createElement('ul', { class: 'lists', style: "color:red" }, [
-    createElement('li', { class: 'item' }, ['a']),
-    createElement('li', { class: 'item' }, ['b']),
-    createElement('li', { class: 'item' }, ['c']),
-])
-
-let VDom2 = createElement('ul', { class: 'lists', 'data-key': 'aaa' }, [
-    createElement('li', { class: 'item', style: "color:black" }, ['aa']),
-    createElement('li', { class: 'item' }, ['1']),
-    createElement('li', { class: 'item' }, ['bb'])
-])
-
 let getAttrs = function (el) {
     let attrs = {};
     let elAttrs = el.attributes
@@ -33,41 +13,58 @@ let getAttrs = function (el) {
 
 /**
  * 
- * @param {*} el: 真实DOM节点
  * 将真实DOM结构转换成虚拟DOM结构
  */
-let r2v = function (el) {
-    let app = el;
-    let tag = app.tagName.toLocaleLowerCase();
+window.HTMLElement.prototype.toVirtual = function(){
+    let el = this;
+    let tag = el.tagName.toLocaleLowerCase();
     let attrs = getAttrs(el);
     let children = [];
     for (let nodeList = el.childNodes, idx = 0, len = nodeList.length; idx < len; ++idx){
         if (nodeList[idx].nodeName.toLocaleLowerCase() == '#text'){
-            children.push(nodeList[idx].data);
+            // 去除掉多余的空格/回车，避免生成空节点
+            let text = nodeList[idx].data.replace(/\n\s*/g,"").replace(" ","");
+            if (text != "") {
+                children.push(text);
+            }
         } else {
-            children.push(r2v(nodeList[idx]));
+            children.push(nodeList[idx].toVirtual());
         }
     }
     return createElement(tag, attrs, children);
 }
 
+window.HTMLElement.prototype.removeAllChild = function(){
+    var el = this;
+    while (el.hasChildNodes()) {
+        el.removeChild(el.firstChild);
+    }
+    return el;
+}
+
+let body = document.body;
+
 /**
  * 获取#app的结构并生成对应的虚拟DOM
  */
-let vt = r2v(document.getElementById('app'));
+console.log('===> 提取body标签内的所有子节点，并生成虚拟DOM start')
+window.VTree = body.toVirtual();
+console.log('===> 提取body标签内的所有子节点，并生成虚拟DOM end')
+
+console.log('===> 将body的内容清空')
+body.removeAllChild();
+
 /**
  * 根据生成的虚拟DOM生成真实DOM
  */
-let el = render(vt);
+console.log('===> 根据虚拟DOM结构生成真实DOM结构 start')
+let realDOM = render(VTree);
+console.log('===> 根据虚拟DOM结构生成真实DOM结构 end')
 
-document.getElementById('temp').innerText = JSON.stringify(r2v(document.getElementById('app')));
 /**
- * 将生成的真实DOM节点映射到#app1中
+ * 将生成的真实DOM节点映射到真实DOM中
  */
-renderDOM(el, '#app1')
+console.log('===> 将生成的真实DOM节点映射到真实DOM中 start')
+renderDOM(realDOM.children, body)
+console.log('===> 将生成的真实DOM节点映射到真实DOM中 end')
 
-// let el = render(VDom1)
-
-// renderDOM(el, '#app')
-// let patchs = diff(VDom1, VDom2);
-// patch(el, patchs);

@@ -96,16 +96,16 @@ function setAttr(el, key, value) {
  */
 function renderDOM(el, root) {
     if (Object.prototype.toString.call(root) === '[object String]') {
-        if (el instanceof Array) { 
-            for( let el_item of el) {
+        if (el instanceof HTMLCollection) { 
+            for(let el_item of el) {
                 document.querySelector(root).appendChild(el_item)
             }
         } else {
             document.querySelector(root).appendChild(el);
         }
     } else {
-        if (el instanceof Array) { 
-            for( let el_item of el) {
+        if (el instanceof HTMLCollection) { 
+            for(let el_item of el) {
                 root.appendChild(el_item);
             }
         } else {
