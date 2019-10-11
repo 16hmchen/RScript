@@ -5,13 +5,14 @@ function diff(oldDOM, newDOM) {
     let patchs = {}
     let index = 0
     TreeWalker(oldDOM, newDOM, patchs, index)// 遍历dom数
-    // console.log({patchs})
     return patchs;
 }
 
 function TreeWalker(oldNode, newNode, patchs, index) {
     let curPatch = []
-    if (!newNode) { //节点被移除
+    if (!oldNode) { // 增加新结点
+        curPatch.push({ type: patchType.APPEND})
+    } else if (!newNode) { //节点被移除
         curPatch.push({ type: patchType.REMOVE })
     } else if (oldNode.tag === newNode.tag) {//标签相同，则比较属性
         let props = diffProps(oldNode.props, newNode.props)
@@ -25,7 +26,7 @@ function TreeWalker(oldNode, newNode, patchs, index) {
         } else {
             // diffChild(oldNode.children, newNode.children, patchs, index) 
             oldNode.children.forEach((item, i) => {//遍历子节点
-                TreeWalker(item, newNode.children[i], patchs, ++Index)
+                TreeWalker(item, newNode.children[i], patchs, ++index)
             })
         }
 
@@ -41,7 +42,6 @@ function TreeWalker(oldNode, newNode, patchs, index) {
 function diffProps(oldProps, newProps) {
     let patch = {}
     for (let key in oldProps) { //比较属性是否改变
-
         if (oldProps[key] !== newProps[key]) {
             patch[key] = newProps[key]
         }

@@ -45,6 +45,9 @@ function doPatch(node, patches) {
             case patchType.REMOVE:
                 node.parentNode.removeChild(node)
                 break;
+            case patchType.APPEND:
+                node.parentNode.appendChild(node)
+                break;
         }
     })
 }
