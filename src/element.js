@@ -15,7 +15,7 @@ class VNode {
         this.props = props
         this.children = children
         this.id = this.props.id || undefined;
-        this.class = this.props.class ? this.props.class.replace(/\s+/g," ").split(" ") : [];
+        this.class = this.props.class ? this.props.class.split(/\s+/g) : [];
         // 后期要实现将这两个数据进行双向绑定，可以直接调用css()方法来设置样式，也可以直接通过this.style="background: black;color: red;"来修改样式
         // 文字版的style样式 如 "background: black;color: red;"
         this._style = this.props.style ? this.props.style.replace(/\s+/g,"") : "";
@@ -74,16 +74,74 @@ class VNode {
         return this;
     };
 
-    /*
-    ** 在当前节点中查找目标节点
-    ** 使用方法类似于JQuery，可以用标签选择器进行查找，例如VNode.$('#id')、VNode.$('.class')、VNode.$('div')
+   /**
+    * 
+    * @param {*} selector 
+    * 在当前节点中查找目标节点
+    * 使用方法类似于JQuery，可以用标签选择器进行查找，例如VNode.$('#id')、VNode.$('.class')、VNode.$('div')
+    * 也可以传入一个VNode对象，表示该VNode对象是否作为子节点存在于该节点中
+    * ！！！！！！！目前只完成了分类，还没实现查找！！！！！！！
     */
     $ (selector) {
-        console.log(selector);
+        if (selector instanceof VNode) {
+            // 在当前节点内查找目标节点selector
+            return;
+        }
+        if (typeof selector === 'string') {
+            // 以空格作为分隔点
+            let target = [];
+            // 如果selector中存在','，则代表需要以','作为分隔点作为并集选择器，如"#id1, #id2, .class1"
+            selector.split(',').forEach(selectorList => {
+                // 对每个selectorList以空格作为分隔点，分隔出多级选择器，比如说.div #div div，需要找出.div->#div>div
+                if (!selectorList || selectorList == "") {
+                    return;
+                }
+                let selectorTarget = selectorList.split(/\s+/g);
+                // 以空格作为分隔点之后只剩一个，例如.class，只需要在目标节点内查找.class即可
+                if (selectorTarget.length == 1 && selectorTarget[0].replace(/\s+/g, "") != "") {
+                    console.log(`${selectorItem} is a ${this._typeOfSelector(selectorItem)} selector.`);
+                    return;
+                } else if (selectorTarget.length >= 2){
+                    // 如果长度大于2，则表明这是一个多级选择器 例如.class #id，要在.class这个节点内查找#id子节点
+                    // 先找到class为.class的节点，再在.class节点内查找#id
+                    // 大致代码如下
+                    /*
+                    let parentNode = new VNode();
+                    parentNode.$(selectorTarget.slice(1))
+                    */
+                   return;
+                }
+                // selectorList.split(/\s+/g).forEach(selectorItem => {
+                //     if (!selectorItem || selectorItem == "") {
+                //         return;
+                //     }
+                    
+                //     target.push(selectorItem);
+                // })
+            }) 
+            return target;
+        }
+    }
+    _typeOfSelector (selector) {
+        if (typeof selector !== 'string') {
+            console.error("selector的类型必须为String");
+            return;
+        }
+        let firstChar = selector.charAt(0);
+        // class选择器
+        if (firstChar === '.') {
+            return 'CLASS';
+        } else if (firstChar === '#') {
+            return 'ID';
+        } else if (firstChar === '[' && selector.charAt(selector.length -1) === ']' && selector.length >= 3) {
+            return 'ATTRITUBE';
+        } else {
+            return 'TAG';
+        }
     }
 
     /**
-     * 拷贝结点，这个到时候把代码改一下
+     * 深拷贝一个节点
      */
     _nodeCopy (obj) {
         let oriEl = obj;
