@@ -1,6 +1,7 @@
 import { createElement, render, renderDOM } from './element'
 import { diff } from './diff'
 import { patch } from './patch'
+import { create } from 'domain';
 /**
  * 
  * @param {*} el
@@ -135,6 +136,8 @@ VTreeInit();
 window.VTree.children.push(createElement('div', {'class': 'myTag'}, [
     createElement('span', {}, ['我是使用虚拟dom增加的子节点'])
 ]))
+
+window.VDOM = createElement('div', {class: 'tag test', id: 'tag', style: 'background: black; color: red;  font-size : 16px;'});
 
 VTree.children[0].children[0].children.push(
     createElement('tr', {}, [

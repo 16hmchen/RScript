@@ -4,11 +4,63 @@
  *  @param children: 该节点的子节点
  */
 class VNode {
+    /**
+     * 
+     * @param {*} tag: 节点标签
+     * @param {*} props: 节点属性
+     * @param {*} children: 节点的子节点
+     */
     constructor (tag, props, children) {
-        this.tag = tag
+        this.tag = tag;
         this.props = props
         this.children = children
-    };
+        this.id = this.props.id || undefined;
+        this.class = this.props.class ? this.props.class.replace(/\s+/g," ").split(" ") : [];
+        // 后期要实现将这两个数据进行双向绑定，可以直接调用css()方法来设置样式，也可以直接通过this.style="background: black;color: red;"来修改样式
+        // 文字版的style样式 如 "background: black;color: red;"
+        this._style = this.props.style ? this.props.style.replace(/\s+/g,"") : "";
+        // 对象版的style样式 如 {background: 'black', color: 'red'}
+        this.style = this._style ? this.initStyle(this._style) : {};
+        let that = this;
+        // 对style对数据拦截，当修改到节点的样式时，会讲string类型的style同步更新
+        // 比如，VDom.css('background', 'red')时，_style和props.style会同步更新，加上"background: red;"
+        let handle = {
+            get (target, key) {
+                return target[key];
+            },
+            set (target, key, value) {
+                target[key] = value;
+                that._style = that.props.style = this.toString(target);
+                return true;
+            },
+            toString (styleObj){
+                let styleStr = "";
+                for (let key in styleObj) {
+                    let styleItem = `${key}: ${styleObj[key]};`;
+                    styleStr += styleItem;
+                }
+                return styleStr;
+            }
+        }
+        this.style = new Proxy(this.style, handle);
+    }
+    /**
+     * 
+     * @param {*} styleStr 
+     * 将字符串类型的style样式转成对象格式
+     */
+    initStyle (styleStr) {
+        let styleList = styleStr.split(";");
+        let styleObj = {};
+        for (let styleItem of styleList) {
+            if (styleItem && styleItem != "") {
+                let [key, value] = styleItem.split(":");
+                styleObj[key] = value;
+            }
+        }
+        return styleObj;
+    }
+
     /** 
      * @param el: 要往该节点中添加的目标子节点
      * 调用该方法可以在该节点的内部的最后添加上目标子节点
@@ -21,6 +73,7 @@ class VNode {
         }
         return this;
     };
+
     /*
     ** 在当前节点中查找目标节点
     ** 使用方法类似于JQuery，可以用标签选择器进行查找，例如VNode.$('#id')、VNode.$('.class')、VNode.$('div')
@@ -28,6 +81,7 @@ class VNode {
     $ (selector) {
         console.log(selector);
     }
+
     /**
      * 拷贝结点，这个到时候把代码改一下
      */
@@ -50,6 +104,7 @@ class VNode {
     copy () {
         return this._nodeCopy(this)
     }
+
     /**
      * 将结点转换成真实结点
      */
@@ -75,6 +130,57 @@ class VNode {
         })
         return el;
     }
+
+    /**
+     * 
+     * @param {...any} className 
+     * 向被选元素添加一个或多个类
+     * usage: VNode.addClass(class1, class2, ..., classn)
+     * 如果需要传入数组，请使用Spread操作符，如VNode.addClass(...classList)
+     */
+    addClass (...classList) {
+        classList.map(className => className.toString());
+        this.class = this.class.concat(classList);
+        return this;
+    }
+
+    /**
+     * 
+     * @param  {...any} classList 
+     * 从被选元素删除一个或多个类
+     * usage: VNode.removeClass(class1, class2, ..., classn)
+     * 如果需要传入数组，请使用Spread操作符，如VNode.removeClass(...classList)
+     */
+    removeClass (...classList) {
+        classList.map(className => className.toString());
+        classList.forEach(className => {
+            let idx = this.class.indexOf(className)
+            if (idx != -1) {
+                this.class.splice(idx, 1);
+            }
+        })
+        return this;
+    }
+
+    /**
+     * 
+     * @param  {...any} classList 
+     * 对被选元素进行添加/删除类的切换操作
+     */
+    toggleClass (...classList) {
+        classList.map(className => className.toString());
+        classList.forEach(className => {
+            let idx = this.class.indexOf(className);
+            if (idx != -1) {
+                this.removeClass(className)
+            } else {
+                this.addClass(className)
+            }
+        })
+        return this;
+        
+    }
+
     /**
      * 
      * @param {*} key 
@@ -88,12 +194,12 @@ class VNode {
         let _key = key || "";
         let _value = value || "";
         if (!key) {
-            return this.props.css || null;
+            return this.style || null;
         }
         if (key && !value) {
-            return this.props.css[key];
+            return this.style[key];
         } else {
-            this.props.css[key] = value;
+            this.style[key] = value;
             return this;
         }
     }
