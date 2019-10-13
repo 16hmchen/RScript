@@ -1,3 +1,5 @@
+import {breadthSearch, depthSearch} from './treeSearch'
+
 /** 
  *  @param tag: 节点的标签
  *  @param props: 节点的属性，class/id/value等
@@ -14,7 +16,7 @@ class VNode {
         this.tag = tag;
         this.props = props
         this.children = children
-        this.id = this.props.id || undefined;
+        this.id = this.props.id ? this.props.id.split(/\s+/g):[];
         this.class = this.props.class ? this.props.class.split(/\s+/g) : [];
         // 后期要实现将这两个数据进行双向绑定，可以直接调用css()方法来设置样式，也可以直接通过this.style="background: black;color: red;"来修改样式
         // 文字版的style样式 如 "background: black;color: red;"
@@ -22,8 +24,26 @@ class VNode {
         // 对象版的style样式 如 {background: 'black', color: 'red'}
         this.style = this._style ? this.initStyle(this._style) : {};
         let that = this;
+        this.breadthSearch = breadthSearch(this);
         // 对style对数据拦截，当修改到节点的样式时，会讲string类型的style同步更新
         // 比如，VDom.css('background', 'red')时，_style和props.style会同步更新，加上"background: red;"
+        
+    }
+    /**
+     * 
+     * @param {*} styleStr 
+     * 将字符串类型的style样式转成对象格式
+     */
+    initStyle (styleStr) {
+        let styleList = styleStr.split(";");
+        let styleObj = {};
+        for (let styleItem of styleList) {
+            if (styleItem && styleItem != "") {
+                let [key, value] = styleItem.split(":");
+                styleObj[key] = value;
+            }
+        }
+        let that = this;
         let handle = {
             get (target, key) {
                 return target[key];
@@ -42,22 +62,7 @@ class VNode {
                 return styleStr;
             }
         }
-        this.style = new Proxy(this.style, handle);
-    }
-    /**
-     * 
-     * @param {*} styleStr 
-     * 将字符串类型的style样式转成对象格式
-     */
-    initStyle (styleStr) {
-        let styleList = styleStr.split(";");
-        let styleObj = {};
-        for (let styleItem of styleList) {
-            if (styleItem && styleItem != "") {
-                let [key, value] = styleItem.split(":");
-                styleObj[key] = value;
-            }
-        }
+        styleObj = new Proxy(styleObj, handle);
         return styleObj;
     }
 
@@ -81,8 +86,11 @@ class VNode {
     * 使用方法类似于JQuery，可以用标签选择器进行查找，例如VNode.$('#id')、VNode.$('.class')、VNode.$('div')
     * 也可以传入一个VNode对象，表示该VNode对象是否作为子节点存在于该节点中
     * ！！！！！！！目前只完成了分类，还没实现查找！！！！！！！
+    * ！！！！！！！查找可以分为广度优先查找和深度优先查找，这个到时候再看一下是哪种效率会高一点！！！！！
+    * 
     */
     $ (selector) {
+        return depthSearch(this)(selector);
         if (selector instanceof VNode) {
             // 在当前节点内查找目标节点selector
             return;
