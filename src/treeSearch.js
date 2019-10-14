@@ -1,7 +1,39 @@
 function isLegal(node, prop) {
     if(prop[0] == '#' && node.id &&  node.id.indexOf(prop.slice(1)) != -1) return true;
     if(prop[0] == '.' && node.class && node.class.indexOf(prop.slice(1)) != -1) return true;
-    if(node.tag == prop) return true;
+    
+    // 处理形如span.tag这类的选择器
+    let classList = [];
+    let idList = [];
+    let idx = Math.min(prop.indexOf('.') == -1 ? prop.length : prop.indexOf('.'), prop.indexOf('#') == -1 ? prop.length : prop.indexOf('#'));
+    let begin = idx == -1 ? prop.length : idx;
+    let end = begin + 1;
+    let tag = prop.slice(0, begin);
+    prop += ".";
+    while (end < prop.length) {
+        if(prop[end] != '.' && prop[end] != '#') {
+            end++;
+        } else {
+            if (prop[begin] == '.') {
+                classList.push(prop.slice(begin+1, end));
+            } else if (prop[begin] == '#') {
+                idList.push(prop.slice(begin+1, end))
+            }
+            begin = end;
+            end++;
+        }
+    }
+    if( node.tag == tag ) {
+        let isFind = true;
+        idList.forEach(item => {
+            if (node.id.indexOf(item) == -1) isFind = false;
+        })
+        classList.forEach(item => {
+            if (node.class.indexOf(item) == -1) isFind = false;
+        })
+        return isFind;
+    }
+    return false;
 }
 
 /**

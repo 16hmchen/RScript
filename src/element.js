@@ -90,7 +90,7 @@ class VNode {
     * 
     */
     $ (selector) {
-        return depthSearch(this)(selector);
+        // return depthSearch(this)(selector);
         if (selector instanceof VNode) {
             // 在当前节点内查找目标节点selector
             return;
@@ -104,28 +104,27 @@ class VNode {
                 if (!selectorList || selectorList == "") {
                     return;
                 }
-                let selectorTarget = selectorList.split(/\s+/g);
+                let selectorTarget = [];
+                selectorList.split(/\s+/g).forEach(item => {
+                    if(item != undefined && item != "") {
+                        selectorTarget.push(item);
+                    }
+                })
                 // 以空格作为分隔点之后只剩一个，例如.class，只需要在目标节点内查找.class即可
-                if (selectorTarget.length == 1 && selectorTarget[0].replace(/\s+/g, "") != "") {
-                    console.log(`${selectorItem} is a ${this._typeOfSelector(selectorItem)} selector.`);
-                    return;
+                if (selectorTarget.length == 1) {
+                    depthSearch(this)(selectorTarget[0]).forEach(node => {
+                        target.push(node);
+                    })
                 } else if (selectorTarget.length >= 2){
                     // 如果长度大于2，则表明这是一个多级选择器 例如.class #id，要在.class这个节点内查找#id子节点
                     // 先找到class为.class的节点，再在.class节点内查找#id
-                    // 大致代码如下
-                    /*
-                    let parentNode = new VNode();
-                    parentNode.$(selectorTarget.slice(1))
-                    */
-                   return;
+                    let nextSelector = selectorTarget.splice(1).join(' ');
+                    this.$(selectorTarget[0]).forEach(node=>{
+                        node.$(nextSelector).forEach(item=>{
+                            target.push(item);
+                        })
+                    })
                 }
-                // selectorList.split(/\s+/g).forEach(selectorItem => {
-                //     if (!selectorItem || selectorItem == "") {
-                //         return;
-                //     }
-                    
-                //     target.push(selectorItem);
-                // })
             }) 
             return target;
         }
@@ -151,51 +150,53 @@ class VNode {
     /**
      * 深拷贝一个节点
      */
-    _nodeCopy (obj) {
-        let oriEl = obj;
-        let tag = oriEl.tag;
-        let props = oriEl.props;
-        let children = [];
-
-        if (typeof obj == 'string') {
-            return obj;
-        }
-        if (oriEl.children) {
-            for (let nodeList = oriEl.children, idx = 0, len = nodeList.length; idx < len; ++idx){
-                children.push(this._nodeCopy(nodeList[idx]));
-            }
-        }
-        return createElement(tag, props, children);
-    }
+    
     copy () {
-        return this._nodeCopy(this)
+        function _nodeCopy (obj) {
+            let oriEl = obj;
+            let tag = oriEl.tag;
+            let props = oriEl.props;
+            let children = [];
+    
+            if (typeof obj == 'string') {
+                return obj;
+            }
+            if (oriEl.children) {
+                for (let nodeList = oriEl.children, idx = 0, len = nodeList.length; idx < len; ++idx){
+                    children.push(_nodeCopy(nodeList[idx]));
+                }
+            }
+            return createElement(tag, props, children);
+        }
+        return _nodeCopy(this)
     }
 
     /**
      * 将结点转换成真实结点
      */
     render () {
-        return this._render(this)
+        function _render (virtualDom) {
+            let tag = virtualDom.tag
+            let props = virtualDom.props
+            let children = virtualDom.children
+        
+            let el = document.createElement(tag)
+            Object.keys(props).forEach(prop => {
+                setAttr(el, prop, props[prop])
+            })
+        
+            children.forEach(child => {
+                if (child instanceof VNode) {
+                    el.appendChild(_render(child))
+                } else {
+                    el.appendChild(document.createTextNode(child))
+                }
+            })
+            return el;
+        }
+        return _render(this)
     }
-    _render (virtualDom) {
-        let tag = virtualDom.tag
-        let props = virtualDom.props
-        let children = virtualDom.children
     
-        let el = document.createElement(tag)
-        Object.keys(props).forEach(prop => {
-            setAttr(el, prop, props[prop])
-        })
-    
-        children.forEach(child => {
-            if (child instanceof VNode) {
-                el.appendChild(this._render(child))
-            } else {
-                el.appendChild(document.createTextNode(child))
-            }
-        })
-        return el;
-    }
 
     /**
      * 

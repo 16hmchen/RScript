@@ -133,15 +133,16 @@ function updateElement($parent, newNode, oldNode, index = 0) {
 VTreeInit();
 
 //为虚拟dom增加虚拟节点
-window.VTree.children.push(createElement('div', {'class': 'myTag'}, [
+window.DIVNODE = createElement('div', {'class': 'myTag tag1 tag2', 'id':'tag'}, [
     createElement('span', {}, ['我是使用虚拟dom增加的子节点'])
-]))
+])
+window.VTree.children.push(DIVNODE);
 
 window.VDOM = createElement('div', {class: 'tag test', id: 'tag', style: 'background: black; color: red;  font-size : 16px;'});
 
 VTree.children[0].children[0].children.push(
     createElement('tr', {}, [
-        createElement('td', {}, [createElement('h3', {}, ['我是使用虚拟dom增加的子节点'])]),
+        createElement('td', {'class': 'myTag'}, [createElement('h3', {}, ['我是使用虚拟dom增加的子节点'])]),
         createElement('td', {'style': 'padding: 1em;'}, ['我是使用虚拟dom增加的子节点'])
     ]),
     createElement('tr', {}, [
