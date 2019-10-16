@@ -29,14 +29,16 @@ window.HTMLElement.prototype.toVirtual = function(){
         if (nodeList[idx].nodeName.toLocaleLowerCase() == '#text'){
             // 去除掉多余的空格/回车，避免生成空节点
             let text = nodeList[idx].data.replace(/\n\s*/g,"").replace(" ","");
+            // 创建一个文本标签
             if (text != "") {
-                children.push(text);
+                children.push(createElement('text', {}, [text], nodeList[idx]));
             }
         } else {
             children.push(nodeList[idx].toVirtual());
         }
     }
-    return createElement(tag, attrs, children);
+    // console.log(createElement(el, tag, attrs, children))
+    return createElement(tag, attrs, children, el);
 }
 
 /**
@@ -124,41 +126,87 @@ function updateElement($parent, newNode, oldNode, index = 0) {
     }
 }
 
+function isDef (v){
+    return v !== undefined && v !== null
+}
+
+function sameInputType (a, b) {
+    if (a.tag !== 'input') return true
+    let i;
+    const typeA = isDef(i = a.data) && isDef(i = i.attrs) && i.type;
+    const typeB = isDef(i = b.data) && isDef(i = i.attrs) && i.type;
+    return typeA === typeB;
+}
+function isSameVNode (a, b) {
+    return (
+      a.tag === b.tag &&  // 标签名
+      // 是否都定义了data，data包含一些具体信息，例如onclick , style
+      isDef(a.props) === isDef(b.props) &&  
+      sameInputType(a, b) // 当标签是<input>的时候，type必须相同
+    )
+}
+
+function patch (oldVNode, VNode) {
+    if (isSameVNode(oldVNode, VNode)) {
+        patchVNode(oldVNode, VNode);
+    }
+}
+
+function patchVNode (oldVNode, VNode) {
+    const el = VNode.el = oldVNode.el
+    let i, oldCh = oldVNode.children, ch = VNode.children
+    if (oldVNode === VNode) return
+    if (oldVNode.text !== null && VNode.text !== null && oldVNode.text !== VNode.text) {
+        api.setTextContent(el, VNode.text)
+    }else {
+        updateEle(el, VNode, oldVNode)
+        if (oldCh && ch && oldCh !== ch) {
+            updateChildren(el, oldCh, ch)
+        }else if (ch){
+            createEle(VNode) //create el's children dom
+        }else if (oldCh){
+            api.removeChildren(el)
+        }
+    }
+}
+
+
 /**
  * 上面是方法定义，待封装
  * 下面的代码可以进行操作
  */
 
 //初始化
-VTreeInit();
+// VTreeInit();
 
-//为虚拟dom增加虚拟节点
-window.DIVNODE = createElement('div', {'class': 'myTag tag1 tag2', 'id':'tag'}, [
-    createElement('span', {}, ['我是使用虚拟dom增加的子节点'])
-])
-window.VTree.children.push(DIVNODE);
+// //为虚拟dom增加虚拟节点
+// window.DIVNODE = createElement('div', {'class': 'myTag tag1 tag2', 'id':'tag'}, [
+//     createElement('span', {}, ['我是使用虚拟dom增加的子节点'])
+// ])
 
-window.VDOM = createElement('div', {class: 'tag test', id: 'tag', style: 'background: black; color: red;  font-size : 16px;'});
+// window.VTree.children.push(DIVNODE);
 
-VTree.children[0].children[0].children.push(
-    createElement('tr', {}, [
-        createElement('td', {'class': 'myTag'}, [createElement('h3', {}, ['我是使用虚拟dom增加的子节点'])]),
-        createElement('td', {'style': 'padding: 1em;'}, ['我是使用虚拟dom增加的子节点'])
-    ]),
-    createElement('tr', {}, [
-        createElement('td', {}, ['我是使用虚拟dom增加的子节点']),
-        createElement('td', {}, ['我是使用虚拟dom增加的子节点'])
-    ]),
-    createElement('tr', {}, [
-        createElement('td', {}, ['我是使用虚拟dom增加的子节点']),
-        createElement('td', {}, ['我是使用虚拟dom增加的子节点'])
-    ])
-)
+// window.VDOM = createElement('div', {class: 'tag test', id: 'tag', style: 'background: black; color: red;  font-size : 16px;'});
 
-//修改功能未完成
-// VTree.children[0].children[0].children[1].children[0].children[0] = '我是使用虚拟dom修改的节点'
+// VTree.children[0].children[0].children.push(
+//     createElement('tr', {}, [
+//         createElement('td', {'class': 'myTag'}, [createElement('h3', {}, ['我是使用虚拟dom增加的子节点'])]),
+//         createElement('td', {'style': 'padding: 1em;'}, ['我是使用虚拟dom增加的子节点'])
+//     ]),
+//     createElement('tr', {}, [
+//         createElement('td', {}, ['我是使用虚拟dom增加的子节点']),
+//         createElement('td', {}, ['我是使用虚拟dom增加的子节点'])
+//     ]),
+//     createElement('tr', {}, [
+//         createElement('td', {}, ['我是使用虚拟dom增加的子节点']),
+//         createElement('td', {}, ['我是使用虚拟dom增加的子节点'])
+//     ])
+// )
 
-let realDOM = document.body;
+// //修改功能未完成
+// // VTree.children[0].children[0].children[1].children[0].children[0] = '我是使用虚拟dom修改的节点'
 
-// 将修改后的dom更新到real DOM中
-updateElement(realDOM, VTree, _VTree)
+// let realDOM = document.body;
+
+// // 将修改后的dom更新到real DOM中
+// updateElement(realDOM, VTree, _VTree)

@@ -11,11 +11,14 @@ class VNode {
      * @param {*} tag: 节点标签
      * @param {*} props: 节点属性
      * @param {*} children: 节点的子节点
+     * @param {*} element: 该节点对应的真实节点位置
      */
-    constructor (tag, props, children) {
+    constructor (tag, props, children, element, text) {
+        this.element = element || null;
         this.tag = tag;
-        this.props = props
-        this.children = children
+        this.props = props;
+        this.children = children;
+        this.text = text || "";
         this.id = this.props.id ? this.props.id.split(/\s+/g):[];
         this.class = this.props.class ? this.props.class.split(/\s+/g) : [];
         // 后期要实现将这两个数据进行双向绑定，可以直接调用css()方法来设置样式，也可以直接通过this.style="background: black;color: red;"来修改样式
@@ -153,11 +156,12 @@ class VNode {
     
     copy () {
         function _nodeCopy (obj) {
+            
             let oriEl = obj;
             let tag = oriEl.tag;
             let props = oriEl.props;
             let children = [];
-    
+            let element = oriEl.element;
             if (typeof obj == 'string') {
                 return obj;
             }
@@ -166,7 +170,7 @@ class VNode {
                     children.push(_nodeCopy(nodeList[idx]));
                 }
             }
-            return createElement(tag, props, children);
+            return createElement(tag, props, children, element);
         }
         return _nodeCopy(this)
     }
@@ -278,9 +282,13 @@ class VNode {
  *  @param children: 该节点的子节点
  *  创建虚拟DOM节点
  */
-function createElement(tag, props, children) {
+function createElement(tag, props, children, element) {
     var props = props || {};
-    return new VNode(tag, props, children)
+    return new VNode(tag, props, children, element)
+}
+
+function createTextNode(element, text) {
+    return new VNode(undefined, undefined, undefined, element, text);
 }
 
 /**
@@ -362,4 +370,4 @@ function renderDOM(el, root) {
 }
 
 
-export { createElement, render, renderDOM, VNode, setAttr }
+export { createElement, createTextNode, render, renderDOM, VNode, setAttr }
