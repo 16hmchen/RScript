@@ -18,7 +18,7 @@ class VNode {
         this.tag = tag;
         this.props = props;
         this.children = children;
-        this.text = text || "";
+        this.text = text || undefined;
         this.id = this.props.id ? this.props.id.split(/\s+/g):[];
         this.class = this.props.class ? this.props.class.split(/\s+/g) : [];
         // 后期要实现将这两个数据进行双向绑定，可以直接调用css()方法来设置样式，也可以直接通过this.style="background: black;color: red;"来修改样式
@@ -162,8 +162,8 @@ class VNode {
             let props = oriEl.props;
             let children = [];
             let element = oriEl.element;
-            if (typeof obj == 'string') {
-                return obj;
+            if (oriEl.tag == 'text') {
+                return createTextNode(element, oriEl.text);
             }
             if (oriEl.children) {
                 for (let nodeList = oriEl.children, idx = 0, len = nodeList.length; idx < len; ++idx){
@@ -288,7 +288,7 @@ function createElement(tag, props, children, element) {
 }
 
 function createTextNode(element, text) {
-    return new VNode(undefined, undefined, undefined, element, text);
+    return new VNode('text', {}, undefined, element, text);
 }
 
 /**

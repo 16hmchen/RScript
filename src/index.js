@@ -1,7 +1,7 @@
-import { createElement, render, renderDOM } from './element'
-import { diff } from './diff'
-import { patch } from './patch'
-import { create } from 'domain';
+import { createElement, createTextNode } from './element'
+import {api} from './api'
+
+
 /**
  * 
  * @param {*} el
@@ -31,13 +31,13 @@ window.HTMLElement.prototype.toVirtual = function(){
             let text = nodeList[idx].data.replace(/\n\s*/g,"").replace(" ","");
             // 创建一个文本标签
             if (text != "") {
-                children.push(createElement('text', {}, [text], nodeList[idx]));
+                // children.push(createElement('text', {}, [text], nodeList[idx]));
+                children.push(createTextNode(nodeList[idx], text))
             }
         } else {
             children.push(nodeList[idx].toVirtual());
         }
     }
-    // console.log(createElement(el, tag, attrs, children))
     return createElement(tag, attrs, children, el);
 }
 
@@ -126,49 +126,6 @@ function updateElement($parent, newNode, oldNode, index = 0) {
     }
 }
 
-function isDef (v){
-    return v !== undefined && v !== null
-}
-
-function sameInputType (a, b) {
-    if (a.tag !== 'input') return true
-    let i;
-    const typeA = isDef(i = a.data) && isDef(i = i.attrs) && i.type;
-    const typeB = isDef(i = b.data) && isDef(i = i.attrs) && i.type;
-    return typeA === typeB;
-}
-function isSameVNode (a, b) {
-    return (
-      a.tag === b.tag &&  // 标签名
-      // 是否都定义了data，data包含一些具体信息，例如onclick , style
-      isDef(a.props) === isDef(b.props) &&  
-      sameInputType(a, b) // 当标签是<input>的时候，type必须相同
-    )
-}
-
-function patch (oldVNode, VNode) {
-    if (isSameVNode(oldVNode, VNode)) {
-        patchVNode(oldVNode, VNode);
-    }
-}
-
-function patchVNode (oldVNode, VNode) {
-    const el = VNode.el = oldVNode.el
-    let i, oldCh = oldVNode.children, ch = VNode.children
-    if (oldVNode === VNode) return
-    if (oldVNode.text !== null && VNode.text !== null && oldVNode.text !== VNode.text) {
-        api.setTextContent(el, VNode.text)
-    }else {
-        updateEle(el, VNode, oldVNode)
-        if (oldCh && ch && oldCh !== ch) {
-            updateChildren(el, oldCh, ch)
-        }else if (ch){
-            createEle(VNode) //create el's children dom
-        }else if (oldCh){
-            api.removeChildren(el)
-        }
-    }
-}
 
 
 /**
@@ -177,7 +134,7 @@ function patchVNode (oldVNode, VNode) {
  */
 
 //初始化
-// VTreeInit();
+VTreeInit();
 
 // //为虚拟dom增加虚拟节点
 // window.DIVNODE = createElement('div', {'class': 'myTag tag1 tag2', 'id':'tag'}, [

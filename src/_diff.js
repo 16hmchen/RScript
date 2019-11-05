@@ -1,32 +1,26 @@
-import { createElement, createTextNode } from './element'
-import {api} from './api'
-
 function isDef (v){
     return v !== undefined && v !== null
 }
 
 function sameInputType (a, b) {
-    if (a.tag !== 'input' || b.tag !== 'input') return true
+    if (a.tag !== 'input') return true
     let i;
     const typeA = isDef(i = a.data) && isDef(i = i.attrs) && i.type;
     const typeB = isDef(i = b.data) && isDef(i = i.attrs) && i.type;
     return typeA === typeB;
 }
-
-function sameVnode (a, b) {
+function isSameVNode (a, b) {
     return (
-      a.key === b.key &&  // key值
       a.tag === b.tag &&  // 标签名
-      a.isComment === b.isComment &&  // 是否为注释节点
       // 是否都定义了data，data包含一些具体信息，例如onclick , style
-      isDef(a.data) === isDef(b.data) &&  
+      isDef(a.props) === isDef(b.props) &&  
       sameInputType(a, b) // 当标签是<input>的时候，type必须相同
     )
-  }
+}
 
-function patch (oldVnode, vnode) {
-    if (sameVnode(oldVnode, vnode)) {
-        patchVnode(oldVnode, vnode)
+function patch (oldVNode, VNode) {
+    if (isSameVNode(oldVNode, VNode)) {
+        patchVNode(oldVNode, VNode);
     } else {
         const oEl = oldVnode.el // 当前oldVnode对应的真实元素节点
         let parentEle = api.parentNode(oEl)  // 父元素
@@ -41,25 +35,7 @@ function patch (oldVnode, vnode) {
     return vnode
 }
 
-patchVnode (oldVnode, vnode) {
-    const el = vnode.el = oldVnode.el
-    let i, oldCh = oldVnode.children, ch = vnode.children
-    if (oldVnode === vnode) return
-    if (oldVnode.text !== null && vnode.text !== null && oldVnode.text !== vnode.text) {
-        api.setTextContent(el, vnode.text)
-    }else {
-        updateEle(el, vnode, oldVnode)
-        if (oldCh && ch && oldCh !== ch) {
-            updateChildren(el, oldCh, ch)
-        }else if (ch){
-            createEle(vnode) //create el's children dom
-        }else if (oldCh){
-            api.removeChildren(el)
-        }
-    }
-}
-
-updateChildren (parentElm, oldCh, newCh) {
+function updateChildren (parentElm, oldCh, newCh) {
     let oldStartIdx = 0, newStartIdx = 0
     let oldEndIdx = oldCh.length - 1
     let oldStartVnode = oldCh[0]
@@ -128,3 +104,23 @@ updateChildren (parentElm, oldCh, newCh) {
         removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
     }
 }
+
+function patchVNode (oldVNode, VNode) {
+    const el = VNode.el = oldVNode.el
+    let i, oldCh = oldVNode.children, ch = VNode.children
+    if (oldVNode === VNode) return
+    if (oldVNode.text !== undefined && VNode.text !== undefined && oldVNode.text !== VNode.text) {
+        api.setTextContent(el, VNode.text)
+    }else {
+        updateEle(el, VNode, oldVNode)
+        if (oldCh && ch && oldCh !== ch) {
+            updateChildren(el, oldCh, ch)
+        }else if (ch){
+            createEle(VNode) // create el's children dom
+        }else if (oldCh){
+            api.removeChildren(el)
+        }
+    }
+}
+
+export { patch }

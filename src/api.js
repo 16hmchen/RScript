@@ -1,6 +1,32 @@
-function setTextContent(el, text) {
-    if (text != undefined && text != "") {
-        el.textContent = text;
+
+api = {
+    setTextContent(el, text) {
+        if (text != undefined && text != "") {
+            el.textContent = text;
+        }
+        return el;
+    },
+    removeChildren(el) {
+        el.parentNode.removeChild(el);
+        return el;
+    },
+    parentNode(el) {
+        return el.parentNode;
+    },
+    nextSibling(el) {
+        return el.nextSibling;
+    },
+    insertBefore(parentNode, insertNode, child) {
+        parentNode.insertBefore(insertNode, child);
+        return insertNode;
+    },
+    removeChild(parentNode, childNode) {
+        parentNode.removeChild(childNode);
     }
-    return el;
 }
+
+
+module.exports = {
+    api
+}
+// export {test}
